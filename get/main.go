@@ -112,11 +112,11 @@ type PKRC struct {
 	PKRCNonCovid    int `bson:"pkrcNonCovid,omitempty"`
 }
 
-func main() {
-	get(context.TODO(), events.APIGatewayProxyRequest{})
-}
+// func main() {
+// 	get(context.TODO(), events.APIGatewayProxyRequest{})
+// }
 
-func main2() {
+func main() {
 	lambda.Start(get)
 }
 
