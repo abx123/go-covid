@@ -804,7 +804,7 @@ func sendToSlack(rec Record) {
 		"Perlis":            ":perlis:",
 		"Pahang":            ":pahang:",
 	}
-	str := fmt.Sprintf("%s Data as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d n New Brought in Dead (BID): %d\n Actual COVID Deaths: %d \n", flags["Malaysia"], rec.Date, rec.NewCases, rec.ImportCases, rec.RecoveredCases, rec.Death.NewDeaths, rec.Death.BIDDeaths, rec.Death.ActualDeaths)
+	str := fmt.Sprintf("%s Data as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n New Brought in Dead (BID): %d\n Actual COVID Deaths: %d \n", flags["Malaysia"], rec.Date, rec.NewCases, rec.ImportCases, rec.RecoveredCases, rec.Death.NewDeaths, rec.Death.BIDDeaths, rec.Death.ActualDeaths)
 	req, _ := json.Marshal(map[string]string{
 		"text": str,
 	})
