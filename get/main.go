@@ -120,11 +120,15 @@ func main() {
 	lambda.Start(get)
 }
 
-func getLatestFromMongo(collection *mongo.Collection) (*Record, error) {
+func getFromMongo(collection *mongo.Collection, date string) (*Record, error) {
 	res := &Record{}
 	opt := options.FindOne()
 	opt.SetSort(bson.M{"date": -1})
-	err := collection.FindOne(context.TODO(), bson.M{}, opt).Decode(res)
+	filter := bson.M{}
+	if date != "" {
+		filter = bson.M{"date": date}
+	}
+	err := collection.FindOne(context.TODO(), filter, opt).Decode(res)
 	if err != nil {
 		return nil, err
 	}
@@ -137,12 +141,29 @@ func get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Methods": "GET",
 	}
-
 	client, _ := NewMongoClient()
 	defer client.Disconnect(context.Background())
 	collection := client.Database("covid").Collection("my")
 
-	latest, err := getLatestFromMongo(collection)
+	var rec *Record
+	var err error
+	date := ""
+	if val, ok := request.PathParameters["date"]; ok {
+		rec, err = getFromMongo(collection, val)
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: http.StatusInternalServerError,
+				Headers:    headers,
+				Body:       err.Error(),
+			}, err
+		}
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusOK,
+			Headers:    headers,
+			Body:       formatResp(rec),
+		}, nil
+	}
+	rec, err = getFromMongo(collection, date)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -153,7 +174,7 @@ func get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Headers:    headers,
-		Body:       formatResp(latest),
+		Body:       formatResp(rec),
 	}, nil
 }
 
