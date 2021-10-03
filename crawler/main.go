@@ -342,8 +342,8 @@ func getStateMap() map[string]map[string]State {
 			continue
 		}
 		sr := strings.Split(srow[0], ",")
-		nc, _ := strconv.Atoi(sr[3])
-		ic, _ := strconv.Atoi(sr[2])
+		nc, _ := strconv.Atoi(sr[2])
+		ic, _ := strconv.Atoi(sr[3])
 		rc, _ := strconv.Atoi(sr[4])
 		states = append(states, tempState{
 			Date:           sr[0],
@@ -810,7 +810,7 @@ func sendToSlack(rec Record) {
 	})
 	_, _ = http.Post(os.Getenv("SLACK"), "application/json", bytes.NewBuffer(req))
 	for k, v := range rec.States {
-		s := fmt.Sprintf("%s %s \n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n Actual Deaths: %d", flags[k], k, v.NewCases, v.ImportCases, v.RecoveredCases, v.Death.NewDeaths, v.Death.ActualDeaths)
+		s := fmt.Sprintf("%s %s as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n Actual Deaths: %d", flags[k], k, rec.Date, v.NewCases, v.ImportCases, v.RecoveredCases, v.Death.NewDeaths, v.Death.ActualDeaths)
 		req, _ := json.Marshal(map[string]string{
 			"text": s,
 		})
