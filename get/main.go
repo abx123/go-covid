@@ -155,7 +155,7 @@ func get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 				StatusCode: http.StatusInternalServerError,
 				Headers:    headers,
 				Body:       err.Error(),
-			}, err
+			}, nil
 		}
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusOK,
@@ -169,7 +169,7 @@ func get(ctx context.Context, request events.APIGatewayProxyRequest) (events.API
 			StatusCode: http.StatusInternalServerError,
 			Headers:    headers,
 			Body:       err.Error(),
-		}, err
+		}, nil
 	}
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,

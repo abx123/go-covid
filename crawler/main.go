@@ -6,13 +6,13 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -154,13 +154,7 @@ func main() {
 	lambda.Start(crawl)
 }
 
-func crawl(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	headers := map[string]string{
-		"Access-Control-Allow-Headers": "Content-Type",
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Methods": "GET",
-	}
-
+func crawl() {
 	client, _ := NewMongoClient()
 	defer client.Disconnect(context.Background())
 	collection := client.Database("covid").Collection("my")
@@ -171,11 +165,7 @@ func crawl(ctx context.Context, request events.APIGatewayProxyRequest) (events.A
 	new := get()
 	latest, err := getLatestFromMongo(collection)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Headers:    headers,
-			Body:       err.Error(),
-		}, err
+		log.Println(err.Error())
 	}
 	t, _ := time.Parse("2006-01-02", latest.Date)
 
@@ -183,20 +173,11 @@ func crawl(ctx context.Context, request events.APIGatewayProxyRequest) (events.A
 		if v, ok := new[d.Format("2006-01-02")]; ok {
 			_, err := saveToMongo(collection, v)
 			if err != nil {
-				return events.APIGatewayProxyResponse{
-					StatusCode: http.StatusInternalServerError,
-					Headers:    headers,
-					Body:       err.Error(),
-				}, err
+				log.Println(err.Error())
 			}
 			sendToSlack(v)
 		}
 	}
-
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Headers:    headers,
-	}, nil
 }
 
 func initMongoRecord(col *mongo.Collection) {
