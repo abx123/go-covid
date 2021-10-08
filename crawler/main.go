@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,14 @@ type Record struct {
 	NewCases          int                `bson:"newCases,omitempty"`
 	ImportCases       int                `bson:"importCases,omitempty"`
 	RecoveredCases    int                `bson:"recoveredCases,omitempty"`
+	ActiveCases       int                `bson:"activeCases,omitempty"`
+	ClusterCases      int                `bson:"clusterCases,omitempty"`
+	PVax              int                `bson:"partiallyVaccinatedCases,omitempty"`
+	FVax              int                `bson:"fullyVaccinatedCases,omitempty"`
+	ChildCases        int                `bson:"childCases,omitempty"`
+	AdolescentCases   int                `bson:"adolescentCases,omitempty"`
+	AdultCases        int                `bson:"adultCases,omitempty"`
+	ElderlyCases      int                `bson:"elderlyCases,omitempty"`
 	ClusterImport     int                `bson:"importClusters,omitempty"`
 	ClusterReligious  int                `bson:"religiousClusters,omitempty"`
 	ClusterCommunity  int                `bson:"communityClusters,omitempty"`
@@ -53,15 +62,24 @@ type Test struct {
 }
 
 type State struct {
-	ImportCases    int        `bson:"importCases,omitempty"`
-	NewCases       int        `bson:"newCases,omitempty"`
-	RecoveredCases int        `bson:"recoveredCases,omitempty"`
-	Death          Death      `bson:"death,omitempty"`
-	Hospital       Hospital   `bson:"hospital,omitempty"`
-	ICU            ICU        `bson:"icu,omitempty"`
-	PKRC           PKRC       `bson:"pkrc,omitempty"`
-	Test           Test       `bson:"test,omitempty"`
-	Population     Population `bson:"population,omitempty"`
+	Name            string     `bson:"Name,omitempty"`
+	ImportCases     int        `bson:"importCases,omitempty"`
+	NewCases        int        `bson:"newCases,omitempty"`
+	RecoveredCases  int        `bson:"recoveredCases,omitempty"`
+	ActiveCases     int        `bson:"activeCases,omitempty"`
+	ClusterCases    int        `bson:"clusterCases,omitempty"`
+	PVax            int        `bson:"partiallyVaccinatedCases,omitempty"`
+	FVax            int        `bson:"fullyVaccinatedCases,omitempty"`
+	ChildCases      int        `bson:"childCases,omitempty"`
+	AdolescentCases int        `bson:"adolescentCases,omitempty"`
+	AdultCases      int        `bson:"adultCases,omitempty"`
+	ElderlyCases    int        `bson:"elderlyCases,omitempty"`
+	Death           Death      `bson:"death,omitempty"`
+	Hospital        Hospital   `bson:"hospital,omitempty"`
+	ICU             ICU        `bson:"icu,omitempty"`
+	PKRC            PKRC       `bson:"pkrc,omitempty"`
+	Test            Test       `bson:"test,omitempty"`
+	Population      Population `bson:"population,omitempty"`
 }
 
 type Hospital struct {
@@ -84,6 +102,8 @@ type Death struct {
 	ActualDeaths    int `bson:"actualDeaths,omitempty"`
 	BIDDeaths       int `bson:"bidDeaths,omitempty"`
 	ActualBIDDeaths int `bson:"actualBidDeaths,omitempty"`
+	PVaxDeaths      int `bson:"partiallyVaccinatedDeaths,omitempty"`
+	FVaxDeaths      int `bson:"FullyVaccinatedDeaths,omitempty"`
 }
 
 type ICU struct {
@@ -245,18 +265,34 @@ func getCountry() map[string]Record {
 		cn, _ := strconv.Atoi(cr[1])
 		ci, _ := strconv.Atoi(cr[2])
 		crec, _ := strconv.Atoi(cr[3])
-		cli, _ := strconv.Atoi(cr[4])
-		clr, _ := strconv.Atoi(cr[5])
-		clc, _ := strconv.Atoi(cr[6])
-		clh, _ := strconv.Atoi(cr[7])
-		cle, _ := strconv.Atoi(cr[8])
-		cld, _ := strconv.Atoi(cr[9])
-		clw, _ := strconv.Atoi(cr[10])
+		ac, _ := strconv.Atoi(cr[4])
+		cc, _ := strconv.Atoi(cr[5])
+		pv, _ := strconv.Atoi(cr[6])
+		fv, _ := strconv.Atoi(cr[7])
+		cch, _ := strconv.Atoi(cr[8])
+		adoc, _ := strconv.Atoi(cr[9])
+		adc, _ := strconv.Atoi(cr[10])
+		ec, _ := strconv.Atoi(cr[11])
+		cli, _ := strconv.Atoi(cr[12])
+		clr, _ := strconv.Atoi(cr[13])
+		clc, _ := strconv.Atoi(cr[14])
+		clh, _ := strconv.Atoi(cr[15])
+		cle, _ := strconv.Atoi(cr[16])
+		cld, _ := strconv.Atoi(cr[17])
+		clw, _ := strconv.Atoi(cr[18])
 		res[cr[0]] = Record{
 			Date:              cr[0],
 			NewCases:          cn,
 			ImportCases:       ci,
 			RecoveredCases:    crec,
+			ActiveCases:       ac,
+			ClusterCases:      cc,
+			PVax:              pv,
+			FVax:              fv,
+			ChildCases:        cch,
+			AdolescentCases:   adoc,
+			AdultCases:        adc,
+			ElderlyCases:      ec,
 			ClusterImport:     cli,
 			ClusterReligious:  clr,
 			ClusterCommunity:  clc,
@@ -293,14 +329,18 @@ func getDeaths() map[string]Death {
 		}
 		dr := strings.Split(drow[0], ",")
 		nd, _ := strconv.Atoi(dr[1])
-		ad, _ := strconv.Atoi(dr[2])
-		bd, _ := strconv.Atoi(dr[3])
+		ad, _ := strconv.Atoi(dr[3])
+		bd, _ := strconv.Atoi(dr[2])
 		abd, _ := strconv.Atoi(dr[4])
+		pv, _ := strconv.Atoi(dr[5])
+		fv, _ := strconv.Atoi(dr[6])
 		res[dr[0]] = Death{
 			NewDeaths:       nd,
 			ActualDeaths:    ad,
 			BIDDeaths:       bd,
 			ActualBIDDeaths: abd,
+			PVaxDeaths:      pv,
+			FVaxDeaths:      fv,
 		}
 	}
 	return res
@@ -309,12 +349,20 @@ func getDeaths() map[string]Death {
 func getStateMap() map[string]map[string]State {
 	test := map[string]map[string]State{}
 	type tempState struct {
-		Date           string
-		Name           string
-		ImportCases    int
-		NewCases       int
-		RecoveredCases int
-		Death          Death
+		Date            string
+		Name            string
+		ImportCases     int
+		NewCases        int
+		RecoveredCases  int
+		ActiveCases     int
+		ClusterCases    int
+		PVax            int
+		FVax            int
+		ChildCases      int
+		AdolescentCases int
+		AdultCases      int
+		ElderlyCases    int
+		Death           Death
 	}
 	sdata, _ := readCSVFromUrl("https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_state.csv")
 	states := []tempState{}
@@ -326,26 +374,60 @@ func getStateMap() map[string]map[string]State {
 		nc, _ := strconv.Atoi(sr[2])
 		ic, _ := strconv.Atoi(sr[3])
 		rc, _ := strconv.Atoi(sr[4])
+		ac, _ := strconv.Atoi(sr[5])
+		cc, _ := strconv.Atoi(sr[6])
+		pv, _ := strconv.Atoi(sr[7])
+		fv, _ := strconv.Atoi(sr[8])
+		cch, _ := strconv.Atoi(sr[9])
+		adoc, _ := strconv.Atoi(sr[10])
+		adc, _ := strconv.Atoi(sr[11])
+		ec, _ := strconv.Atoi(sr[12])
 		states = append(states, tempState{
-			Date:           sr[0],
-			Name:           sr[1],
-			ImportCases:    ic,
-			NewCases:       nc,
-			RecoveredCases: rc,
+			Date:            sr[0],
+			Name:            sr[1],
+			ImportCases:     ic,
+			NewCases:        nc,
+			RecoveredCases:  rc,
+			ActiveCases:     ac,
+			ClusterCases:    cc,
+			PVax:            pv,
+			FVax:            fv,
+			ChildCases:      cch,
+			AdolescentCases: adoc,
+			AdultCases:      adc,
+			ElderlyCases:    ec,
 		})
 	}
 	for _, v := range states {
 		if _, ok := test[v.Date]; ok {
 			test[v.Date][v.Name] = State{
-				ImportCases:    v.ImportCases,
-				NewCases:       v.NewCases,
-				RecoveredCases: v.RecoveredCases,
+				Name:            v.Name,
+				ImportCases:     v.ImportCases,
+				NewCases:        v.NewCases,
+				RecoveredCases:  v.RecoveredCases,
+				ActiveCases:     v.ActiveCases,
+				ClusterCases:    v.ClusterCases,
+				PVax:            v.PVax,
+				FVax:            v.FVax,
+				ChildCases:      v.ChildCases,
+				AdolescentCases: v.AdolescentCases,
+				AdultCases:      v.AdultCases,
+				ElderlyCases:    v.ElderlyCases,
 			}
 		} else {
 			test[v.Date] = map[string]State{v.Name: {
-				ImportCases:    v.ImportCases,
-				NewCases:       v.NewCases,
-				RecoveredCases: v.RecoveredCases,
+				Name:            v.Name,
+				ImportCases:     v.ImportCases,
+				NewCases:        v.NewCases,
+				RecoveredCases:  v.RecoveredCases,
+				ActiveCases:     v.ActiveCases,
+				ClusterCases:    v.ClusterCases,
+				PVax:            v.PVax,
+				FVax:            v.FVax,
+				ChildCases:      v.ChildCases,
+				AdolescentCases: v.AdolescentCases,
+				AdultCases:      v.AdultCases,
+				ElderlyCases:    v.ElderlyCases,
 			}}
 		}
 	}
@@ -360,6 +442,8 @@ func getDeathByState() map[string]map[string]Death {
 		ActualDeaths    int
 		BIDDeaths       int
 		ActualBIDDeaths int
+		PVaxDeaths      int
+		FVaxDeaths      int
 	}
 	res := map[string]map[string]Death{}
 	sdata, _ := readCSVFromUrl("https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/deaths_state.csv")
@@ -370,9 +454,11 @@ func getDeathByState() map[string]map[string]Death {
 		}
 		sr := strings.Split(srow[0], ",")
 		nd, _ := strconv.Atoi(sr[2])
-		ad, _ := strconv.Atoi(sr[3])
-		bd, _ := strconv.Atoi(sr[4])
+		ad, _ := strconv.Atoi(sr[4])
+		bd, _ := strconv.Atoi(sr[3])
 		abd, _ := strconv.Atoi(sr[5])
+		pv, _ := strconv.Atoi(sr[6])
+		fv, _ := strconv.Atoi(sr[7])
 		deathByStates = append(deathByStates, tempDeath{
 			Date:            sr[0],
 			Name:            sr[1],
@@ -380,6 +466,8 @@ func getDeathByState() map[string]map[string]Death {
 			ActualDeaths:    ad,
 			BIDDeaths:       bd,
 			ActualBIDDeaths: abd,
+			PVaxDeaths:      pv,
+			FVaxDeaths:      fv,
 		})
 	}
 	for _, v := range deathByStates {
@@ -389,6 +477,8 @@ func getDeathByState() map[string]map[string]Death {
 				ActualDeaths:    v.ActualDeaths,
 				BIDDeaths:       v.BIDDeaths,
 				ActualBIDDeaths: v.ActualBIDDeaths,
+				PVaxDeaths:      v.PVaxDeaths,
+				FVaxDeaths:      v.FVaxDeaths,
 			}
 		} else {
 			res[v.Date] = map[string]Death{v.Name: {
@@ -396,6 +486,8 @@ func getDeathByState() map[string]map[string]Death {
 				ActualDeaths:    v.ActualDeaths,
 				BIDDeaths:       v.BIDDeaths,
 				ActualBIDDeaths: v.ActualBIDDeaths,
+				PVaxDeaths:      v.PVaxDeaths,
+				FVaxDeaths:      v.FVaxDeaths,
 			}}
 		}
 	}
@@ -785,16 +877,43 @@ func sendToSlack(rec Record) {
 		"Perlis":            ":perlis:",
 		"Pahang":            ":pahang:",
 	}
-	str := fmt.Sprintf("%s Data as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n New Brought in Dead (BID): %d\n Actual COVID Deaths: %d \n", flags["Malaysia"], rec.Date, rec.NewCases, rec.ImportCases, rec.RecoveredCases, rec.Death.NewDeaths, rec.Death.BIDDeaths, rec.Death.ActualDeaths)
+	ranking := map[int]string{
+		0:  ":first_place_medal:",
+		1:  ":second_place_medal:",
+		2:  ":third_place_medal:",
+		3:  ":four:",
+		4:  ":five:",
+		5:  ":six:",
+		6:  ":seven:",
+		7:  ":eight:",
+		8:  ":nine:",
+		9:  ":keycap_ten:",
+		10: ":one::one:",
+		11: ":one::two:",
+		12: ":one::three:",
+		13: ":one::four:",
+		14: ":one::five:",
+		15: ":one::six:",
+		16: ":one::seven:",
+	}
+	s := []State{}
+	for _, v := range rec.States {
+		s = append(s, v)
+	}
+	sort.Slice(s, func(a, b int) bool {
+		return s[a].NewCases > s[b].NewCases
+	})
+	str := fmt.Sprintf("%s Data as of %s\n New Cases: %d \n Import Cases: %d \n Active Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n New Brought in Dead (BID): %d\n Actual COVID Deaths: %d \n", flags["Malaysia"], rec.Date, rec.NewCases, rec.ImportCases, rec.RecoveredCases, rec.ActiveCases, rec.Death.NewDeaths, rec.Death.BIDDeaths, rec.Death.ActualDeaths)
 	req, _ := json.Marshal(map[string]string{
 		"text": str,
 	})
-	_, _ = http.Post(os.Getenv("SLACK"), "application/json", bytes.NewBuffer(req))
-	for k, v := range rec.States {
-		s := fmt.Sprintf("%s %s as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n New Deaths: %d \n Actual Deaths: %d", flags[k], k, rec.Date, v.NewCases, v.ImportCases, v.RecoveredCases, v.Death.NewDeaths, v.Death.ActualDeaths)
-		req, _ := json.Marshal(map[string]string{
-			"text": s,
-		})
-		_, _ = http.Post(os.Getenv("SLACK"), "application/json", bytes.NewBuffer(req))
+	msg := ""
+	for i, v := range s {
+		msg += fmt.Sprintf("%s %s %s as of %s\n New Cases: %d \n Import Cases: %d \n Recovered Cases: %d \n Active Cases: %d \n New Deaths: %d \n Actual Deaths: %d \n Partially Vaccinated Deaths: %d \n Fully Vaccinated Deaths: %d \n\n", ranking[i], flags[v.Name], v.Name, rec.Date, v.NewCases, v.ImportCases, v.RecoveredCases, v.ActiveCases, v.Death.NewDeaths, v.Death.ActualDeaths, v.Death.PVaxDeaths, v.Death.FVaxDeaths)
 	}
+	_, _ = http.Post(os.Getenv("SLACK"), "application/json", bytes.NewBuffer(req))
+	rq, _ := json.Marshal(map[string]string{
+		"text": msg,
+	})
+	_, _ = http.Post(os.Getenv("SLACK"), "application/json", bytes.NewBuffer(rq))
 }
